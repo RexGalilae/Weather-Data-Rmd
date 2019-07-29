@@ -1,0 +1,8 @@
+base
+jpeg
+dplyr
+ggplot2
+knitr
+xtable
+magrittr
+data.table

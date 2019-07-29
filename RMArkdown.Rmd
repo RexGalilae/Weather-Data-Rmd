@@ -1,0 +1,284 @@
+---
+title: "Weather Events and their Impacts on Human Health and Economics"
+date: "`r Sys.Date()`"
+author: "Zaid Hassan"
+output:
+  rmdformats::readthedown:
+    code_folding: show
+    self_contained: true
+    thumbnails: false
+    lightbox: true
+    keep_md: yes
+    df_print: paged
+    highlight: tango
+---
+## Synopsis
+
+```{r image-render, echo=FALSE, fig.align="center", fig.width=6, cache=TRUE}
+library(jpeg)
+library(grid)
+img <- readJPEG("hurriet-pasha.jpg")
+grid.raster(img)
+```
+
+The NOAA Storm Database receives Storm Data from the National Weather Service from across the US. This project aims to quantify the impact of various documented storms from an Economic as well as Human perspective. The idea is to compare and contrast various events to answer the following questions:
+
+1. Across the United States, which types of events are **most harmful with respect to population health**?
+
+2. Across the United States, which types of events have the **greatest economic consequences**?
+
+This work was done as a part of a project towards the completion of the [Reproducible Research](http://www.coursera.org/learn/reproducible-research) course in the [Data Science Specialization](http://www.coursera.org/specializations/jhu-data-science). This `knitr` generated publication documents all the work done (in R) towards the completion of said project. 
+
+*Read the full [data documentation](https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf)*
+
+
+## Load up all dependencies and set global variables
+```{r setup, message = FALSE,	warning = FALSE, cache=FALSE}
+library(dplyr)
+library(ggplot2)
+library(knitr)
+library(xtable)
+library(magrittr)
+library(data.table)
+library(rapportools)
+library(wesanderson)
+
+knitr::opts_chunk$set(
+	fig.align = "center",
+	fig.height = 6,
+	fig.path = "figs/fig-",
+	fig.width = 6,
+	message = FALSE,
+	warning = FALSE,
+	comment = NA
+)
+```
+
+
+## Download Data if Missing
+```{r download-data, message=FALSE, warning=FALSE}
+destfile <- "repdata_data_StormData.csv.bz2"
+fileURL <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+
+if(!file.exists(destfile)){
+  res <- tryCatch(download.file(fileURL,
+                            destfile=destfile,
+                            method="auto"),
+              error=function(e) 1)
+}
+```
+
+## Load Data onto R
+```{r load-data, message=FALSE, warning=FALSE, cache=TRUE}
+df <- as.data.table(read.csv("repdata_data_StormData.csv.bz2"))
+```
+
+## The Data {.tabset}
+
+### Table
+```{r table, echo=FALSE}
+df
+```
+
+### Columns
+```{r cols, echo=FALSE, results='asis'}
+print(xtable(as.data.frame(colnames(df))), type = "html")
+```
+
+## Data Processing
+
+### Data Subsetting
+
+Since we're only interested in:
+
+* Event Type `EVTYPE`
+* Fatalities `FATALITIES`
+* Injuries `INJURIES`
+* Damange to Property `PROPDMG`E`PROPDMGEXP`
+* Damange to Crops `CROPDMG`E`CROPDMGEXP`
+
+```{r subset, cache = TRUE}
+dmg <- df[,c("EVTYPE", "FATALITIES", "INJURIES", "PROPDMG", "PROPDMGEXP", "CROPDMG", "CROPDMGEXP")]
+```
+
+
+### Quantifying Data
+*Making the Data Visualization-ready* 
+
+The dataset used some interesting notation to represent the amount of damage done to their crops and property. For example,
+
+<a id = "ideal"></a>
+`r data.frame(X   = 8E5, Y = 6E3, "..." = "...")`
+
+is represented in two columns as,
+
+<a id = "curr"></a>
+`r data.frame(X   = 8,  XEXP   = 5, Y = 6, YEXP = "K", "..." = "...")`
+
+Let's have a look at the `"xEXP"` values present in the dataset.
+
+```{r unique-propexps}
+unique(dmg$PROPDMGEXP)
+```
+
+```{r unique-cropexps}
+unique(dmg$CROPDMGEXP)
+```
+
+Corresponding to each unique symbol, we need to assign a numeric value. Let's create key-value pairs with our assigned exponents as values to facilitate our transition from this current state (shown [here](#curr)) to [this](#ideal).
+
+### 1. Change all `xEXP` entries to uppercase.
+```{r to-upper, cache=FALSE}
+cols <- c("PROPDMGEXP", "CROPDMGEXP")
+dmg %<>% mutate_at(cols, toupper)
+dmg <- as.data.table(dmg)
+```
+
+### 2. Map property and crop damage alphanumeric exponents to numeric values.
+```{r mappings}
+propDmgKey <-  c("\"\"" = 10^0,
+                 "-" = 10^0, 
+                 "+" = 10^0,
+                 "0" = 10^0,
+                 "1" = 10^1,
+                 "2" = 10^2,
+                 "3" = 10^3,
+                 "4" = 10^4,
+                 "5" = 10^5,
+                 "6" = 10^6,
+                 "7" = 10^7,
+                 "8" = 10^8,
+                 "9" = 10^9,
+                 "H" = 10^2,
+                 "K" = 10^3,
+                 "M" = 10^6,
+                 "B" = 10^9)
+
+cropDmgKey <-  c("\"\"" = 10^0,
+                "?" = 10^0, 
+                "0" = 10^0,
+                "K" = 10^3,
+                "M" = 10^6,
+                "B" = 10^9)
+```
+
+### 3. Replace the values in `PROPDMGEXP` with their corresponding numeric values.
+```{r replace-keys, cache=FALSE}
+dmg[, PROPDMGEXP := propDmgKey[as.character(dmg[,PROPDMGEXP])]]
+dmg[is.na(PROPDMGEXP), PROPDMGEXP := 10^0 ]
+
+dmg[, CROPDMGEXP := cropDmgKey[as.character(dmg[,CROPDMGEXP])] ]
+dmg[is.na(CROPDMGEXP), CROPDMGEXP := 10^0 ]
+```
+*NOTE:* Using `mutate_at` along with a key-value fetcher function for this task doesn't work as intended and instead, copies the same values across all rows.
+
+### 4. Use `mutate` to create columns for `PropertyDamage`, `CropDamage` and `TotalDamage` and get rid of the raw column data
+```{r calc-dmg, cache=FALSE}
+dmg %<>% 
+  mutate(PropertyDamage = PROPDMG*PROPDMGEXP, CropDamage = CROPDMG*CROPDMGEXP) %>% 
+  mutate(TotalDamage = PropertyDamage+CropDamage, TotalCasualties = FATALITIES+INJURIES) %>% 
+  select(-c("PROPDMG", "PROPDMGEXP", "CROPDMG", "CROPDMGEXP")) 
+```
+
+### 5. Preview the Dataframe before proceeding
+```{r prev}
+dmg[0:100,]
+```
+
+## Results
+
+### Summary of Data
+
+Let's first `summarize` the data to find the total Economic and Manpower Damage of these Weather events
+
+```{r dmg-summary, cache=TRUE}
+damageReport <- dmg %>% 
+                  group_by(EVTYPE)  %>% 
+                  summarize(PropertyDamage = sum(PropertyDamage),
+                            CropDamage = sum(CropDamage),
+                            TotalDamage = sum(TotalDamage),
+                            Injuries = sum(INJURIES),
+                            Fatalities = sum(FATALITIES),
+                            TotalCasualties = sum(TotalCasualties))
+damageReport
+```
+
+### Prepping up the Data for Bar Plotting
+
+Since `ggplot` works by plotting a set of variables grouped by a `fill` aesthetic, we need to `melt` our report data to make our report fully plot-ready. But first, to split it into its human and economic facets:
+
+```{r split}
+econLosses <- damageReport[ ,c("EVTYPE","PropertyDamage","CropDamage", "TotalDamage")]
+humanLosses <- damageReport[, c("EVTYPE","Injuries", "Fatalities", "TotalCasualties")]
+```
+
+Then, to order by Total Losses
+``` {r order}
+econLosses <- econLosses[order(econLosses$TotalDamage, decreasing = TRUE),]
+humanLosses <- humanLosses[order(humanLosses$TotalCasualties, decreasing = TRUE),]
+```
+
+Take the Top 10 most costly events for each. The rest will merely clutter up our graph
+```{r top-10}
+econLosses <- econLosses[1:10,]
+humanLosses <- humanLosses[1:10,]
+```
+
+Finally, melt the data
+```{r melt}
+econLosses <- melt(econLosses)
+humanLosses <- melt(humanLosses)
+``` 
+
+### Plotting
+
+```{r hloss-bar}
+# Specify Aesthetic mappings
+plot <- ggplot(humanLosses, aes(x = reorder(EVTYPE, -value), y= value, fill= variable))
+
+# Specify Bar Chart specs
+plot = plot + geom_bar(stat = "identity", position = "dodge")
+
+# Set y-axis label
+plot = plot + ylab("Casualties") 
+
+# Prevent clutter
+plot = plot + theme(axis.text.x = element_text(angle=45, hjust=1))
+
+# Set chart title and center it
+plot = plot + ggtitle("Top 10 Deadliest Events") + theme(plot.title = element_text(hjust = 0.5))
+
+plot
+```
+
+```{r eloss-bar}
+# Specify Aesthetic mappings
+plot <- ggplot(econLosses, aes(x = reorder(EVTYPE, -value), y= value, fill= variable))
+
+# Specify Bar Chart specs
+plot = plot + geom_bar(stat = "identity", position = "dodge")
+
+# Set y-axis label
+plot = plot + ylab("Cost ($)") 
+
+# Prevent clutter
+plot = plot + theme(axis.text.x = element_text(angle=45, hjust=1))
+
+# Set chart title and center it
+plot = plot + ggtitle("Top 10 Costliest Events") + theme(plot.title = element_text(hjust = 0.5))
+
+plot
+```
+
+While a bar plot pretty much nails it when it comes to comparing events on absolute terms, a relative comparison of Total Losses using a "Waffle" Chart might be better for most situations. 
+
+First, re-abbreviate the data to only include the Total Losses of each category
+
+```{r re-summarize}
+totalhumanLosses <- humanLosses[as.character(humanLosses$variable) == "TotalCasualties",c("EVTYPE","value")]
+totaleconLosses <- econLosses[as.character(econLosses$variable) == "TotalDamage",c("EVTYPE","value")]
+```
+
+```{r waffle}
+
+```
