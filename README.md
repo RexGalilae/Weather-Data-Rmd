@@ -11,7 +11,5 @@ The NOAA Storm Database receives Storm Data from the National Weather Service fr
 
 This work was done as a part of a project towards the completion of the [Reproducible Research](http://www.coursera.org/learn/reproducible-research) course in the [Data Science Specialization](http://www.coursera.org/specializations/jhu-data-science). This `knitr` generated publication documents all the work done (in R) towards the completion of said project. 
 
+-------------------------
 **Read the full [data documentation](https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf)**
-
------------------
-*Done towards the completion of the [Reproducible Research](https://www.coursera.org/learn/reproducible-research) course by Johns Hopkins University.*

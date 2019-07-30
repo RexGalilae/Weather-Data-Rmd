@@ -12,9 +12,11 @@ output:
     df_print: paged
     highlight: tango
 ---
+<a href="https://github.com/RexGalilae/Weather-Data-Rmd" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+
 ## Synopsis
 
-```{r image-render, echo=FALSE, fig.align="center", fig.width=6, cache=TRUE}
+```{r image-render, echo=FALSE, fig.align="center", fig.width=6, cache=TRUE, fig.cap="A photo of Hurricane Florence taken from the ISS (Courtesy: NASA)"}
 library(jpeg)
 library(grid)
 img <- readJPEG("hurriet-pasha.jpg")
@@ -40,8 +42,8 @@ library(knitr)
 library(xtable)
 library(magrittr)
 library(data.table)
-library(rapportools)
-library(wesanderson)
+library(waffle)
+library(RColorBrewer)
 
 knitr::opts_chunk$set(
 	fig.align = "center",
@@ -128,7 +130,7 @@ unique(dmg$CROPDMGEXP)
 Corresponding to each unique symbol, we need to assign a numeric value. Let's create key-value pairs with our assigned exponents as values to facilitate our transition from this current state (shown [here](#curr)) to [this](#ideal).
 
 ### 1. Change all `xEXP` entries to uppercase.
-```{r to-upper, cache=FALSE}
+```{r to-upper, cache=TRUE}
 cols <- c("PROPDMGEXP", "CROPDMGEXP")
 dmg %<>% mutate_at(cols, toupper)
 dmg <- as.data.table(dmg)
@@ -170,10 +172,10 @@ dmg[is.na(PROPDMGEXP), PROPDMGEXP := 10^0 ]
 dmg[, CROPDMGEXP := cropDmgKey[as.character(dmg[,CROPDMGEXP])] ]
 dmg[is.na(CROPDMGEXP), CROPDMGEXP := 10^0 ]
 ```
-*NOTE:* Using `mutate_at` along with a key-value fetcher function for this task doesn't work as intended and instead, copies the same values across all rows.
+*NOTE:* Using `mutate_at` along with a key-value fetcher function for this task didn't work as intended and instead, copied the same values across all rows. This is why it was avoided in this chunk.
 
 ### 4. Use `mutate` to create columns for `PropertyDamage`, `CropDamage` and `TotalDamage` and get rid of the raw column data
-```{r calc-dmg, cache=FALSE}
+```{r calc-dmg, cache=TRUE}
 dmg %<>% 
   mutate(PropertyDamage = PROPDMG*PROPDMGEXP, CropDamage = CROPDMG*CROPDMGEXP) %>% 
   mutate(TotalDamage = PropertyDamage+CropDamage, TotalCasualties = FATALITIES+INJURIES) %>% 
@@ -232,18 +234,21 @@ humanLosses <- melt(humanLosses)
 
 ### Plotting
 
-```{r hloss-bar}
+```{r hloss-bar, fig.cap="A Bar Plot of the Top 10 Events with the Most Reported Casualties"}
 # Specify Aesthetic mappings
 plot <- ggplot(humanLosses, aes(x = reorder(EVTYPE, -value), y= value, fill= variable))
 
 # Specify Bar Chart specs
 plot = plot + geom_bar(stat = "identity", position = "dodge")
 
+# Set x-axis label to blank
+plot = plot + xlab(element_blank())
+
 # Set y-axis label
 plot = plot + ylab("Casualties") 
 
-# Prevent clutter
-plot = plot + theme(axis.text.x = element_text(angle=45, hjust=1))
+# Prevent clutter around the x-axis
+plot = plot + theme(axis.text.x = element_text(angle=45, hjust=1), axis.title.x = element_blank())
 
 # Set chart title and center it
 plot = plot + ggtitle("Top 10 Deadliest Events") + theme(plot.title = element_text(hjust = 0.5))
@@ -251,7 +256,7 @@ plot = plot + ggtitle("Top 10 Deadliest Events") + theme(plot.title = element_te
 plot
 ```
 
-```{r eloss-bar}
+```{r eloss-bar, fig.cap="A Bar Plot of the Top 10 Costliest Types of Weather Events"}
 # Specify Aesthetic mappings
 plot <- ggplot(econLosses, aes(x = reorder(EVTYPE, -value), y= value, fill= variable))
 
@@ -261,8 +266,8 @@ plot = plot + geom_bar(stat = "identity", position = "dodge")
 # Set y-axis label
 plot = plot + ylab("Cost ($)") 
 
-# Prevent clutter
-plot = plot + theme(axis.text.x = element_text(angle=45, hjust=1))
+# Prevent clutter around the x-axis
+plot = plot + theme(axis.text.x = element_text(angle=45, hjust=1), axis.title.x = element_blank())
 
 # Set chart title and center it
 plot = plot + ggtitle("Top 10 Costliest Events") + theme(plot.title = element_text(hjust = 0.5))
@@ -270,15 +275,15 @@ plot = plot + ggtitle("Top 10 Costliest Events") + theme(plot.title = element_te
 plot
 ```
 
-While a bar plot pretty much nails it when it comes to comparing events on absolute terms, a relative comparison of Total Losses using a "Waffle" Chart might be better for most situations. 
+The data for Casualties is pretty clear on what the major contributor to weather-event related deaths is with Tornados taking a sizeable lead over the rest in both Injuries as well as Fatalities. The following four events are tied pretty evenly with each other while the events further down the list start appearing progressively insignificant next to one another.
 
-First, re-abbreviate the data to only include the Total Losses of each category
+On the other hand, the data on Economic Costs a steady progression a la [Zipf's Law](https://en.wikipedia.org/wiki/Zipf%27s_law) with Floods still holding an indisputable lead over damages to Property and Crops with Typhoon and Tornados (no less) not very far behind. Interestingly, one may also notice that a few Events show extreme selectivity towards one type of Economic Resource. Upon closer inspection, however, it seems obvious why.
 
-```{r re-summarize}
-totalhumanLosses <- humanLosses[as.character(humanLosses$variable) == "TotalCasualties",c("EVTYPE","value")]
-totaleconLosses <- econLosses[as.character(econLosses$variable) == "TotalDamage",c("EVTYPE","value")]
-```
+## Concluding Words
 
-```{r waffle}
+This work was done as a part of a project towards the completion of the [Reproducible Research](http://www.coursera.org/learn/reproducible-research) course in the [Data Science Specialization](http://www.coursera.org/specializations/jhu-data-science). 
 
-```
+Keeping focus and familiarity in mind,I went with the `readthedocs`-esque layout available for `Rmd` courtesy of [juba](https://github.com/juba/rmdformats). I've made my full code available on [github](https://github.com/RexGalilae/Weather-Data-Rmd). If there are any suggestions, feel free to make them `r emo::ji("smile")`
+
+-------------------------------------------------------------
+*Created by Zaid Hassan aka alhazen on `r Sys.Date()`*
