@@ -5,14 +5,15 @@ cache: packages
 r_packages:
   - rmarkdown
   - tidyverse
-  - grid
   - jpeg
   - emo
   - data.table
   - xtable
   - knitr
   - rmdformats
- 
+
+r_github_packages:
+  - hadley/emo
+
 os:
-  - windows
   - linux
