@@ -42,8 +42,6 @@ library(knitr)
 library(xtable)
 library(magrittr)
 library(data.table)
-library(waffle)
-library(RColorBrewer)
 
 knitr::opts_chunk$set(
 	fig.align = "center",
