@@ -1,0 +1,18 @@
+language: r
+sudo: false
+script: make weather
+cache: packages
+r_packages:
+  - rmarkdown
+  - tidyverse
+  - grid
+  - jpeg
+  - emo
+  - data.table
+  - xtable
+  - knitr
+  - rmdformats
+ 
+os:
+  - windows
+  - linux

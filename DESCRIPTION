@@ -1,0 +1,26 @@
+Title: Weather Events and their Impacts on Human Health and Economics
+Version: 0.2.1
+Date: 2019-07-30
+Author: Zaid Hassan [aut, cre]
+Authors@R: person(given = "Zaid", family = "Hassan",
+    role = c("aut", "cre"), email = "mdzaidgr8@gmail.com")
+Maintainer: Zaid Hassan <mdzaidgr8@wisc.edu>
+Description: Using R to make sense of the data from the NOAA Storm Database to find out the Top 10 Costliest Weather Events.
+License: MIT + file LICENSE
+URL: https://github.com/RexGalilae/Weather-Data-Rmd
+BugReports: https://github.com/RexGalilae/Weather-Data-Rmd/issues
+Depends:
+    R (>= 5.1)
+Imports:
+  rmarkdown,
+  tidyverse,
+  grid,
+  jpeg,
+  emo,
+  data.table,
+  xtable,
+  knitr,
+  rmdformats
+Suggests:
+
+RoxygenNote: 5.0.1

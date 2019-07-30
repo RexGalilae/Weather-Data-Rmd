@@ -71,6 +71,8 @@ if(!file.exists(destfile)){
 ## Load Data onto R
 ```{r load-data, message=FALSE, warning=FALSE, cache=TRUE}
 df <- as.data.table(read.csv("repdata_data_StormData.csv.bz2"))
+
+assertthat::assert_that(exists("df"))
 ```
 
 ## The Data {.tabset}
