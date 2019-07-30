@@ -1,5 +1,6 @@
 # Weather-Data-Rmd
 *Written by Zaid Hassan*
+[![Build Status](https://travis-ci.com/RexGalilae/Weather-Data-Rmd.svg?branch=master)](https://travis-ci.com/RexGalilae/Weather-Data-Rmd) 
 
 The NOAA Storm Database receives Storm Data from the National Weather Service from across the US. This project aims to quantify the impact of various documented storms from an Economic as well as Human perspective. The idea is to compare and contrast various events to answer the following questions:
 
