@@ -11,7 +11,7 @@ The NOAA Storm Database receives Storm Data from the National Weather Service fr
 
 2. Across the United States, which types of events have the **greatest economic consequences**?
 
-This work was done as a part of a project towards the completion of the [Reproducible Research](http://www.coursera.org/learn/reproducible-research) course in the [Data Science Specialization](http://www.coursera.org/specializations/jhu-data-science). This `knitr` generated publication documents all the work done (in R) towards the completion of said project. 
+This work was done as a part of a project towards the completion of the [Reproducible Research](http://www.coursera.org/learn/reproducible-research) course in the [Data Science Specialization](http://www.coursera.org/specializations/jhu-data-science). This `knitr` generated publication documents all the work done (in R) towards the completion of said project. Due to githubs limitations on viewing large markdown files, you can access my notebook [here](https://rpubs.com/RexGalilae/weather-events) on Rpubs.
 
 -------------------------
 **Read the full [data documentation](https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf)**
